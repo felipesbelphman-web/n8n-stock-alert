@@ -80,3 +80,17 @@ These were manual checks of the original configured workflow. The sanitized temp
 ## Suggested next improvements
 
 Validate input rows, log daily checks, add failure notifications, and prevent repeated alerts until stock changes.
+
+## Screenshots
+
+### Automation Workflow
+Daily stock monitoring workflow built with n8n.
+![Automation workflow](./workflow.png)
+
+### Inventory Spreadsheet
+Google Sheets inventory with current quantities and minimum stock levels.
+![Inventory spreadsheet](./inventory.png)
+
+### Email Alert
+Email summary showing products that need restocking and the required quantities.
+![Stock alert email](./email-alert.png)
