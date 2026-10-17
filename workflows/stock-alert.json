@@ -1,0 +1,263 @@
+{
+  "name": "Stock Alert — n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fac86187-bbd3-4098-ba69-4fc8639f53f6",
+              "name": "status",
+              "value": "Restock required",
+              "type": "string"
+            },
+            {
+              "id": "022c6b77-f77f-4fd8-9cc8-ea7c46f0a4e3",
+              "name": "restock_quantity",
+              "value": "={{ $json.minimum - $json.quantity }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        704,
+        -64
+      ],
+      "id": "ea8cbaa0-d52a-4081-87fb-c65d5dba8081",
+      "name": "Low Stock"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d750951f-f4ba-434e-85f2-f57d5f696cfc",
+              "name": "status",
+              "value": "Stock sufficient",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        704,
+        128
+      ],
+      "id": "1f41a23c-abb4-4596-9081-aaaef1e611c0",
+      "name": "Stock Available"
+    },
+    {
+      "parameters": {
+        "jsCode": "const products = $input.all().map(item => item.json);\n\nconst totalUnits = products.reduce(\n  (total, product) => total + product.restock_quantity,\n  0\n);\n\nconst lines = products.map(product =>\n  `- ${product.product}: ${product.quantity} available, ` +\n  `minimum ${product.minimum}, ` +\n  `restock ${product.restock_quantity} units`\n);\n\nreturn [{\n  json: {\n    subject: \"Low Stock Alert\",\n    products_count: products.length,\n    total_restock_units: totalUnits,\n    message: [\n      \"The following products need restocking:\",\n      \"\",\n      ...lines,\n      \"\",\n      `Total units needed to reach minimum stock: ${totalUnits}`\n    ].join(\"\\n\")\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -64
+      ],
+      "id": "5bcf984f-c4ce-4153-8794-3498e6b854fc",
+      "name": "Build Stock Summary"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "75a786a8-ad0c-4feb-ac5f-c4b6e940f2f5",
+              "leftValue": "={{ $json.quantity }}",
+              "rightValue": "={{ $json.minimum }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        32
+      ],
+      "id": "f7148c12-82ea-47b5-8d76-68120ddc103e",
+      "name": "Check Stock Level"
+    },
+    {
+      "parameters": {
+        "toRecipients": "recipient@example.com",
+        "subject": "={{ $json.subject }}",
+        "bodyContent": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -64
+      ],
+      "id": "fc7f0117-6bc6-446c-a023-d80ac0eaf464",
+      "name": "Send Stock Alert"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Inventory",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        32
+      ],
+      "id": "1e1ffd50-22ae-4054-b9a5-9f1ef75b6feb",
+      "name": "Read Inventory"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -64
+      ],
+      "id": "285e65f0-794c-4d82-a6b1-4a96d250d388",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        32,
+        128
+      ],
+      "id": "93b66377-9e5f-4509-987f-ab9784a1dc10",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Low Stock": {
+      "main": [
+        [
+          {
+            "node": "Build Stock Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Stock Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Stock Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock Level": {
+      "main": [
+        [
+          {
+            "node": "Low Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stock Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Inventory": {
+      "main": [
+        [
+          {
+            "node": "Check Stock Level",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Dublin",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false
+  }
+}

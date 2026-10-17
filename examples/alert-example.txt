@@ -1,0 +1,9 @@
+Subject: Low Stock Alert
+
+The following products need restocking:
+
+- Shampoo: 3 available, minimum 5, restock 2 units
+- Hair Mask: 2 available, minimum 4, restock 2 units
+- Heat Protectant: 1 available, minimum 4, restock 3 units
+
+Total units needed to reach minimum stock: 7
